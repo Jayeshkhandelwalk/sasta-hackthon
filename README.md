@@ -207,6 +207,9 @@ For a project whose README is named `Readme.md`, set `"readmePath": "Readme.md"`
 instead of `"README.md"` in this same file.
 
 Set the API key only in the current PowerShell session, not in the config:
+Run the first command and wait for the `Gemini API key:` prompt. Paste the key
+at that prompt; do not put the key inside the command or its quotation marks.
+PowerShell will hide the pasted input.
 
 ```powershell
 $key = Read-Host "Gemini API key" -AsSecureString
