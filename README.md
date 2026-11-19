@@ -78,11 +78,10 @@ The published npm package is named `@jayu_k/readme-agent`; its installed
 command is still `readme-agent`. `npm view` prints the published version,
 and `Get-Command` confirms that PowerShell can locate the command.
 
-If you are developing the CLI locally instead, run these commands in the
-readme-agent source folder, not in the project whose README you plan to update:
+If you are forking the repo and using it locally than follow these commands:
 
 ```powershell
-cd "C:\Users\ASUS\OneDrive\Desktop\sasta hackthon"
+cd "C:\Users\your\path
 npm install
 npm run build
 npm link
