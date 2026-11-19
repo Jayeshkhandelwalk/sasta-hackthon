@@ -21,7 +21,9 @@ readme-agent hook uninstall
 `init` creates `.readme-agent.json` and can offer to create a README with the
 managed markers. `update` collects relevant Git changes, previews the proposed
 section, and asks before applying. API keys are never stored in project config;
-optional Gemini drafting reads `GEMINI_API_KEY` from the environment.
+optional Gemini drafting reads `GEMINI_API_KEY` from the environment and can
+write a full project guide with setup instructions and a getting-started
+tutorial. It uses repository manifests and selected source files as evidence.
 
 ## Optional automation
 
@@ -152,9 +154,10 @@ git add README.md
 git commit -m "docs: update README"
 ```
 
-By default, the generated section describes affected source and configuration
-files in an English sentence. It may not identify exact function names or
-version changes.
+Without AI, the generated section is a short English summary of affected
+source and configuration files. To generate a fuller project guide with an
+overview, setup instructions, and a tutorial, enable Gemini drafting and set
+`GEMINI_API_KEY` as described below.
 
 ### 5. Optional Gemini AI drafting
 

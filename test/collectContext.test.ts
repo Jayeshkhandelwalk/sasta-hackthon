@@ -23,6 +23,7 @@ describe('safe project context collection', () => {
     await writeFile(join(repositoryRoot, 'README.md'), '# Example\n');
     await writeFile(join(repositoryRoot, 'package.json'), '{"scripts":{"test":"vitest"}}\n');
     await writeFile(join(repositoryRoot, 'src.ts'), 'export const value = 1;\n');
+    await writeFile(join(repositoryRoot, 'main.c'), 'int main(void) { return 0; }\n');
     await mkdir(join(repositoryRoot, 'src'));
     await writeFile(join(repositoryRoot, 'src', 'nested.ts'), 'export const nested = 2;\n');
     await writeFile(join(repositoryRoot, 'notes.txt'), 'not relevant\n');
@@ -31,7 +32,7 @@ describe('safe project context collection', () => {
       repositoryRoot,
       createConfig(),
       {
-        changedFiles: ['README.md', 'package.json', 'src.ts', 'src/nested.ts', 'notes.txt'],
+        changedFiles: ['README.md', 'src.ts', 'main.c', 'src/nested.ts', 'notes.txt'],
         diff: 'diff for src.ts',
       },
     );
@@ -41,6 +42,7 @@ describe('safe project context collection', () => {
     expect(result.diff).toBe('diff for src.ts');
     expect(result.selectedFileContents).toEqual({
       'package.json': '{"scripts":{"test":"vitest"}}\n',
+      'main.c': 'int main(void) { return 0; }\n',
       'src.ts': 'export const value = 1;\n',
       'src/nested.ts': 'export const nested = 2;\n',
     });

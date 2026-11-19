@@ -19,6 +19,7 @@ describe('watch path filtering', () => {
   it('watches included source and configuration paths', () => {
     expect(isWatchablePath(root, 'src/app.ts', config)).toBe(true);
     expect(isWatchablePath(root, 'src/nested/app.ts', config)).toBe(true);
+    expect(isWatchablePath(root, 'src/main.c', config)).toBe(true);
     expect(isWatchablePath(root, 'package.json', config)).toBe(true);
   });
 

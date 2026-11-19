@@ -8,24 +8,53 @@ const MAX_FILE_BYTES = 256 * 1024;
 const MAX_README_BYTES = 1024 * 1024;
 
 const SOURCE_EXTENSIONS = new Set([
+  '.bat',
+  '.c',
   '.cjs',
+  '.cc',
+  '.cpp',
+  '.cs',
   '.conf',
   '.css',
+  '.cxx',
+  '.dart',
+  '.ex',
+  '.exs',
   '.gradle',
+  '.h',
+  '.hh',
+  '.hpp',
+  '.hxx',
+  '.java',
+  '.kt',
+  '.kts',
   '.html',
   '.ini',
   '.js',
   '.json',
   '.jsx',
   '.mjs',
+  '.php',
+  '.py',
+  '.pyi',
+  '.rb',
+  '.rs',
   '.properties',
+  '.scala',
   '.scss',
+  '.sh',
+  '.sql',
+  '.swift',
   '.toml',
   '.ts',
   '.tsx',
+  '.vue',
+  '.svelte',
+  '.ps1',
   '.xml',
   '.yaml',
   '.yml',
+  '.go',
 ]);
 
 const CONFIG_FILES = new Set([
@@ -34,16 +63,47 @@ const CONFIG_FILES = new Set([
   '.gitignore',
   '.npmrc',
   '.nvmrc',
+  'build.gradle',
+  'build.gradle.kts',
+  'cargo.toml',
+  'composer.json',
+  'deno.json',
   'docker-compose.yml',
   'dockerfile',
+  'gemfile',
+  'go.mod',
+  'makefile',
   'package.json',
   'package-lock.json',
+  'pipfile',
+  'pom.xml',
   'pnpm-lock.yaml',
+  'pyproject.toml',
+  'requirements.txt',
   'tsconfig.json',
   'vite.config.js',
   'vite.config.mjs',
   'vite.config.ts',
 ]);
+const PROJECT_CONTEXT_FILES = [
+  'Cargo.toml',
+  'composer.json',
+  'deno.json',
+  'Dockerfile',
+  'docker-compose.yml',
+  'Gemfile',
+  'go.mod',
+  'Makefile',
+  'package.json',
+  'Pipfile',
+  'pom.xml',
+  'pyproject.toml',
+  'requirements.txt',
+  'tsconfig.json',
+  '.nvmrc',
+  'build.gradle',
+  'build.gradle.kts',
+];
 
 export async function collectContext(
   root: string,
@@ -68,9 +128,15 @@ export async function collectContext(
   const selectedFileContents: Record<string, string> = {};
 
   const changedFiles = normalizeChangedFiles(repositoryRoot, changeSet.changedFiles);
-  const relevantFiles = changedFiles.filter((file) =>
+  const relevantChangedFiles = changedFiles.filter((file) =>
     isRelevantChangedFile(file, config, ignoreMatcher),
   );
+  const projectContextFiles = await findProjectContextFiles(
+    repositoryRoot,
+    config,
+    ignoreMatcher,
+  );
+  const relevantFiles = [...new Set([...relevantChangedFiles, ...projectContextFiles])].sort();
 
   if (relevantFiles.length > MAX_SELECTED_FILES) {
     throw new Error(
@@ -115,6 +181,35 @@ export async function collectContext(
     selectedFileContents,
     diff: changeSet.diff,
   };
+}
+
+async function findProjectContextFiles(
+  repositoryRoot: string,
+  config: AgentConfig,
+  ignoreMatcher: Ignore,
+): Promise<string[]> {
+  const files: string[] = [];
+  for (const file of PROJECT_CONTEXT_FILES) {
+    if (!isRelevantChangedFile(file, config, ignoreMatcher)) {
+      continue;
+    }
+
+    const absolutePath = resolveSafeRepositoryPath(repositoryRoot, file);
+    let info;
+    try {
+      info = await lstat(absolutePath);
+    } catch (error) {
+      if (getErrorCode(error) === 'ENOENT') {
+        continue;
+      }
+      throw new Error(`Unable to inspect project context file "${file}": ${getErrorMessage(error)}`);
+    }
+    if (info.isSymbolicLink() || !info.isFile()) {
+      throw new Error(`Project context path "${file}" must be a regular file.`);
+    }
+    files.push(file);
+  }
+  return files;
 }
 
 export const collectProjectContext = collectContext;
