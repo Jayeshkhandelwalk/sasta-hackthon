@@ -5,7 +5,19 @@ import { getDefaultConfig, loadConfig, saveConfig } from '../config.js';
 import { findRepoRoot } from '../git/repository.js';
 import type { AgentConfig } from '../contracts.js';
 
-export async function runInit(cwd: string): Promise<void> {
+export interface InitOptions {
+  isInteractive?: () => boolean;
+  askForConfirmation?: (message: string) => Promise<boolean>;
+}
+
+export async function runInit(
+  cwd: string,
+  options: InitOptions = {},
+): Promise<void> {
+  const isInteractive =
+    options.isInteractive ??
+    (() => Boolean(process.stdin.isTTY && process.stdout.isTTY));
+  const requestConfirmation = options.askForConfirmation ?? askForConfirmation;
   const repositoryRoot = await findRepoRoot(cwd);
   const configPath = join(repositoryRoot, '.readme-agent.json');
   const hasConfig = await isRegularFile(configPath, 'configuration');
@@ -26,7 +38,7 @@ export async function runInit(cwd: string): Promise<void> {
     }
 
     if (configLoadError !== undefined) {
-      const replace = await askForConfirmation(
+      const replace = await requestConfirmation(
         `The existing configuration could not be loaded (${getErrorMessage(configLoadError)}). Replace it with defaults?`,
       );
       if (!replace) {
@@ -36,7 +48,7 @@ export async function runInit(cwd: string): Promise<void> {
       shouldSaveConfig = true;
       overwriteConfig = true;
     } else {
-      const replace = await askForConfirmation(
+      const replace = await requestConfirmation(
         `Configuration already exists at "${configPath}". Replace its settings with defaults?`,
       );
       if (replace) {
@@ -52,10 +64,33 @@ export async function runInit(cwd: string): Promise<void> {
     }
   }
 
+  if (
+    config.ai?.enabled !== true &&
+    isInteractive()
+  ) {
+    const enableGemini = await requestConfirmation(
+      'Enable Gemini drafting for full project explanations and tutorials? Selected README text, project files, and Git diffs will be sent to Google Gemini; GEMINI_API_KEY is required.',
+    );
+    if (enableGemini) {
+      config = {
+        ...config,
+        ai: {
+          enabled: true,
+          provider: 'gemini',
+          model: 'gemini-3.5-flash-lite',
+        },
+      };
+      shouldSaveConfig = true;
+      if (hasConfig) {
+        overwriteConfig = true;
+      }
+    }
+  }
+
   const readmeExists = await existingReadme(repositoryRoot, config.readmePath);
   let shouldCreateReadme = false;
   if (!readmeExists) {
-    const createReadme = await askForConfirmation(
+    const createReadme = await requestConfirmation(
       `README "${config.readmePath}" is missing. Create it with a project heading and an empty generated section between "${config.startMarker}" and "${config.endMarker}"?`,
     );
     if (!createReadme) {

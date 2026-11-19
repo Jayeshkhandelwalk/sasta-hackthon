@@ -123,6 +123,24 @@ describe('repository configuration', () => {
     });
   });
 
+  it('enables Gemini when the user opts in during initialization', async () => {
+    await simpleGit(repositoryRoot).init();
+    await writeFile(join(repositoryRoot, 'README.md'), '# Existing project\n');
+
+    await runInit(repositoryRoot, {
+      isInteractive: () => true,
+      askForConfirmation: async (message) => message.includes('Enable Gemini'),
+    });
+
+    await expect(loadConfig(repositoryRoot)).resolves.toMatchObject({
+      ai: {
+        enabled: true,
+        provider: 'gemini',
+        model: 'gemini-3.5-flash-lite',
+      },
+    });
+  });
+
   it('rejects OpenAI provider settings with a migration hint', async () => {
     const config = {
       readmePath: 'README.md',

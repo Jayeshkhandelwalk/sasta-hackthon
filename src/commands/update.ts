@@ -107,7 +107,9 @@ export async function runUpdate(
   });
 
   if (!preview.approved) {
-    console.log('README update declined; README remains unchanged.');
+    console.log(
+      'README update declined; README remains unchanged. Run "readme-agent update" again and approve the preview to apply it.',
+    );
     return;
   }
 

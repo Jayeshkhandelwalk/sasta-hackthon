@@ -23,7 +23,10 @@ managed markers. `update` collects relevant Git changes, previews the proposed
 section, and asks before applying. API keys are never stored in project config;
 optional Gemini drafting reads `GEMINI_API_KEY` from the environment and can
 write a full project guide with setup instructions and a getting-started
-tutorial. It uses repository manifests and selected source files as evidence.
+tutorial. During interactive initialization, you can opt in to Gemini; selected
+README text, project files, and Git diffs are sent to Google Gemini when
+drafting is enabled. It uses repository manifests and selected source files as
+evidence.
 
 ## Optional automation
 
