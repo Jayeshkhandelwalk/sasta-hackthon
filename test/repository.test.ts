@@ -3,7 +3,11 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { findRepoRoot, getChangeSet } from '../src/git/repository.js';
+import {
+  findRepoRoot,
+  getChangeSet,
+  getCommitChangeSet,
+} from '../src/git/repository.js';
 
 describe('Git repository changes', () => {
   let temporaryRoot: string;
@@ -71,6 +75,28 @@ describe('Git repository changes', () => {
       diff: '',
     });
   });
+
+  it('collects committed changes for post-commit updates', async () => {
+    await writeFile(join(repositoryRoot, 'README.md'), '# Before\n');
+    git(repositoryRoot, 'add', 'README.md');
+    git(repositoryRoot, 'commit', '-m', 'Initial README');
+    const firstCommit = gitOutput(repositoryRoot, 'rev-parse', 'HEAD');
+    const initialChanges = await getCommitChangeSet(repositoryRoot, firstCommit);
+    expect(initialChanges.changedFiles).toEqual(['README.md']);
+    expect(initialChanges.diff).toContain('# Before');
+
+    await writeFile(join(repositoryRoot, 'src.ts'), 'export const value = 1;\n');
+    git(repositoryRoot, 'add', 'src.ts');
+    git(repositoryRoot, 'commit', '-m', 'Add source');
+    const secondCommit = gitOutput(repositoryRoot, 'rev-parse', 'HEAD');
+
+    const changes = await getCommitChangeSet(repositoryRoot, secondCommit);
+    expect(changes.changedFiles).toEqual(['src.ts']);
+    expect(changes.diff).toContain('export const value = 1');
+    await expect(
+      getCommitChangeSet(repositoryRoot, 'not-a-commit'),
+    ).rejects.toThrow(/Could not resolve/i);
+  });
 });
 
 function git(cwd: string, ...args: string[]): void {
@@ -79,4 +105,12 @@ function git(cwd: string, ...args: string[]): void {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+}
+
+function gitOutput(cwd: string, ...args: string[]): string {
+  return execFileSync('git', args, {
+    cwd,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  }).trim();
 }

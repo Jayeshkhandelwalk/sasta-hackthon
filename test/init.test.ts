@@ -49,4 +49,41 @@ describe('repository configuration', () => {
     expect(returnedConfig).toEqual(existingConfig);
     expect(await readFile(configPath, 'utf8')).toBe(serializedConfig);
   });
+
+  it('rejects secret-bearing config fields', async () => {
+    await writeFile(
+      join(repositoryRoot, '.readme-agent.json'),
+      `${JSON.stringify({
+        readmePath: 'README.md',
+        include: ['**/*'],
+        exclude: [],
+        startMarker: '<!-- README-AGENT:START -->',
+        endMarker: '<!-- README-AGENT:END -->',
+        updateMode: 'manual',
+        apiKey: 'not-a-real-key',
+      })}\n`,
+    );
+
+    await expect(loadConfig(repositoryRoot)).rejects.toThrow(
+      /unsupported field "apiKey"; do not store secrets/i,
+    );
+  });
+
+  it('rejects README paths that escape the repository', async () => {
+    await writeFile(
+      join(repositoryRoot, '.readme-agent.json'),
+      `${JSON.stringify({
+        readmePath: '../README.md',
+        include: ['**/*'],
+        exclude: [],
+        startMarker: '<!-- README-AGENT:START -->',
+        endMarker: '<!-- README-AGENT:END -->',
+        updateMode: 'manual',
+      })}\n`,
+    );
+
+    await expect(loadConfig(repositoryRoot)).rejects.toThrow(
+      /readmePath must not escape the repository/i,
+    );
+  });
 });

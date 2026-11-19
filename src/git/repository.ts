@@ -100,6 +100,72 @@ export async function getChangeSet(root: string): Promise<ChangeSet> {
   };
 }
 
+export async function getCommitChangeSet(
+  root: string,
+  commitRef: string,
+): Promise<ChangeSet> {
+  const repositoryRoot = await findRepoRoot(root);
+  if (typeof commitRef !== 'string' || commitRef.trim() === '') {
+    throw new Error('Commit reference must be a non-empty Git revision.');
+  }
+
+  const git = simpleGit(repositoryRoot);
+  let commitHash: string;
+  try {
+    commitHash = (
+      await git.raw([
+        'rev-parse',
+        '--verify',
+        '--end-of-options',
+        `${commitRef}^{commit}`,
+      ])
+    ).trim();
+  } catch {
+    throw new Error(`Could not resolve "${commitRef}" to a commit in this repository.`);
+  }
+  if (!/^[0-9a-f]{40,64}$/i.test(commitHash)) {
+    throw new Error('Git returned an invalid commit identifier.');
+  }
+
+  let changedPathsOutput: string;
+  let diff: string;
+  try {
+    [changedPathsOutput, diff] = await Promise.all([
+      git.raw([
+        'diff-tree',
+        '--root',
+        '--no-commit-id',
+        '--name-only',
+        '-r',
+        '-z',
+        '--no-renames',
+        commitHash,
+      ]),
+      git.raw([
+        'diff-tree',
+        '--root',
+        '--no-commit-id',
+        '--no-ext-diff',
+        '--no-renames',
+        '-p',
+        '-r',
+        commitHash,
+      ]),
+    ]);
+  } catch {
+    throw new Error(`Unable to read the committed changes for "${commitHash}".`);
+  }
+
+  const changedFiles = [...new Set(
+    changedPathsOutput
+      .split('\0')
+      .filter(Boolean)
+      .map((file) => normalizeRepoPath(repositoryRoot, file)),
+  )].sort();
+
+  return { changedFiles, diff };
+}
+
 async function readGitStatus(git: ReturnType<typeof simpleGit>, repositoryRoot: string) {
   try {
     return await git.status(['--untracked-files=all']);
