@@ -161,22 +161,50 @@ The default model is Google's `gemini-3.5-flash-lite`. Gemini API access has a
 limited free tier, subject to Google's current model availability, quotas, and
 terms. Create an API key in
 [Google AI Studio](https://aistudio.google.com/apikey), then open the target
-project's config:
+project's `.readme-agent.json` file in the root of the target Git repository
+(the same folder where you run `readme-agent update`). Run `readme-agent init`
+there first if the file does not exist. This setting belongs in that
+configuration file, not in `package.json` or `README.md`:
 
 ```powershell
 notepad .readme-agent.json
 ```
 
-Add this property inside the JSON object. Add a comma after the preceding
-property if needed:
+Add or replace the top-level `ai` object inside `.readme-agent.json`. It must
+be at the same level as `readmePath`, `include`, and `updateMode` in the outer
+JSON object, not nested inside one of those properties. Keep the other
+configuration values. Add a comma after the preceding top-level property if
+needed:
 
 ```json
-"ai": {
-  "enabled": true,
-  "provider": "gemini",
-  "model": "gemini-3.5-flash-lite"
+{
+  "readmePath": "README.md",
+  "include": ["**/*"],
+  "exclude": [
+    ".git/**",
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    ".env",
+    ".env.*",
+    "**/.env",
+    "**/.env.*",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "startMarker": "<!-- README-AGENT:START -->",
+  "endMarker": "<!-- README-AGENT:END -->",
+  "updateMode": "manual",
+  "ai": {
+    "enabled": true,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite"
+  }
 }
 ```
+
+For a project whose README is named `Readme.md`, set `"readmePath": "Readme.md"`
+instead of `"README.md"` in this same file.
 
 Set the API key only in the current PowerShell session, not in the config:
 
