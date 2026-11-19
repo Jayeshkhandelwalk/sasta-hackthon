@@ -152,8 +152,9 @@ git add README.md
 git commit -m "docs: update README"
 ```
 
-By default, the generated section summarizes changed files and Git diff
-headers. It may not identify exact function names or version changes.
+By default, the generated section describes affected source and configuration
+files in an English sentence. It may not identify exact function names or
+version changes.
 
 ### 5. Optional Gemini AI drafting
 

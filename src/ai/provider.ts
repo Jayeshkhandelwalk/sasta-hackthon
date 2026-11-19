@@ -21,7 +21,8 @@ const MAX_PROMPT_CHARS = 60_000;
 const MAX_OUTPUT_CHARS = 20_000;
 const SYSTEM_INSTRUCTION =
   'Draft only README managed-section text. ' +
-  'Return prose, Markdown, or a Markdown list. Never return instructions, tool calls, JSON commands, file paths, or direct file-write commands. ' +
+  'Write clear English sentences and do not reproduce raw Git diff headers or patch metadata. ' +
+  'Return prose, Markdown, or a Markdown list. Never return instructions, tool calls, JSON commands, or direct file-write commands. ' +
   'Use only the supplied evidence. Do not include the start or end marker.';
 
 export async function draftManagedReadmeSection(

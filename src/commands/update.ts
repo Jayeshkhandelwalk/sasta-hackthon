@@ -167,21 +167,25 @@ async function draftSection(
   const files = Object.keys(context.selectedFileContents).sort();
   const summary =
     files.length > 0
-      ? `Updated files:\n${files.map((file) => `- \`${file}\``).join('\n')}`
-      : 'Recent repository changes:\n- No relevant source or config files were selected.';
-
-  const diffSummary = context.diff
-    .split('\n')
-    .filter((line) => /^(\+\+\+|---|diff --git)/.test(line))
-    .slice(0, 20)
-    .join('\n');
+      ? `Recent changes affect the following files: ${formatFileList(files)}.`
+      : 'Recent repository changes were detected, but no relevant source or configuration files were selected for a detailed summary.';
 
   return [
     '## Recent changes',
     '',
     summary,
-    diffSummary ? `\nGit summary:\n${diffSummary}` : '',
   ].join('\n').trim();
+}
+
+function formatFileList(files: string[]): string {
+  const formattedFiles = files.map((file) => `\`${file}\``);
+  if (formattedFiles.length === 1) {
+    return formattedFiles[0];
+  }
+  if (formattedFiles.length === 2) {
+    return `${formattedFiles[0]} and ${formattedFiles[1]}`;
+  }
+  return `${formattedFiles.slice(0, -1).join(', ')}, and ${formattedFiles[formattedFiles.length - 1]}`;
 }
 
 function getErrorCode(error: unknown): string | undefined {

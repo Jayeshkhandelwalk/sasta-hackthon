@@ -62,6 +62,45 @@ describe('readme-agent update command', () => {
     expect(updatedReadme).toContain('<!-- README-AGENT:START -->');
   });
 
+  it('summarizes changed files in English instead of copying Git diff headers', async () => {
+    const repositoryRoot = await mkdtemp(join(tmpdir(), 'readme-agent-update-'));
+    temporaryDirectories.push(repositoryRoot);
+    const readmeText =
+      '# Project\n\n<!-- README-AGENT:START -->\nOld\n<!-- README-AGENT:END -->\n';
+    await writeFile(join(repositoryRoot, 'README.md'), readmeText);
+    const context: UpdateContext = {
+      repositoryRoot,
+      readmeText,
+      selectedFileContents: {
+        'src/app.ts': 'export const app = true;',
+        'src/config.ts': 'export const enabled = true;',
+      },
+      diff:
+        'diff --git a/src/app.ts b/src/app.ts\n' +
+        '--- a/src/app.ts\n+++ b/src/app.ts\n' +
+        'diff --git a/src/config.ts b/src/config.ts',
+    };
+
+    await runUpdate(repositoryRoot, {
+      explicitApproval: true,
+      findRepositoryRoot: vi.fn().mockResolvedValue(repositoryRoot),
+      loadRepositoryConfig: vi.fn().mockResolvedValue(config),
+      collectRepositoryChanges: vi.fn().mockResolvedValue({
+        changedFiles: ['src/app.ts', 'src/config.ts'],
+        diff: context.diff,
+      } satisfies ChangeSet),
+      collectUpdateContext: vi.fn().mockResolvedValue(context),
+      writePreview: vi.fn(),
+    });
+
+    const updatedReadme = await readFile(join(repositoryRoot, 'README.md'), 'utf8');
+    expect(updatedReadme).toContain(
+      'Recent changes affect the following files: `src/app.ts` and `src/config.ts`.',
+    );
+    expect(updatedReadme).not.toContain('diff --git');
+    expect(updatedReadme).not.toContain('Git summary:');
+  });
+
   it('does not apply when approval is declined', async () => {
     const repositoryRoot = await mkdtemp(join(tmpdir(), 'readme-agent-update-'));
     temporaryDirectories.push(repositoryRoot);
