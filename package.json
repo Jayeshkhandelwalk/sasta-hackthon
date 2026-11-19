@@ -1,5 +1,5 @@
 {
-  "name": "readme-agent",
+  "name": "@jayu_k/readme-agent",
   "version": "0.1.0",
   "description": "A terminal tool that updates project README files from Git changes.",
   "type": "module",
@@ -36,5 +36,9 @@
     "tsup": "^9.0.0",
     "typescript": "^7.0.2",
     "vitest": "^5.1.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jayeshkhandelwalk/sasta-hackthon.git"
   }
 }
