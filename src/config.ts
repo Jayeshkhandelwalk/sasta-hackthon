@@ -36,6 +36,14 @@ const CONFIG_KEYS = new Set([
 const AI_CONFIG_KEYS = new Set(['enabled', 'provider', 'model']);
 const UPDATE_MODES = new Set<UpdateMode>(['manual', 'watch', 'post-commit']);
 
+export function getDefaultConfig(): AgentConfig {
+  return {
+    ...DEFAULT_CONFIG,
+    include: [...DEFAULT_CONFIG.include],
+    exclude: [...DEFAULT_CONFIG.exclude],
+  };
+}
+
 export class ConfigAlreadyExistsError extends Error {
   constructor(filePath: string) {
     super(
@@ -46,11 +54,7 @@ export class ConfigAlreadyExistsError extends Error {
 }
 
 export async function createDefaultConfig(root: string): Promise<AgentConfig> {
-  const config = {
-    ...DEFAULT_CONFIG,
-    include: [...DEFAULT_CONFIG.include],
-    exclude: [...DEFAULT_CONFIG.exclude],
-  };
+  const config = getDefaultConfig();
 
   try {
     await saveConfig(root, config);

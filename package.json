@@ -1,0 +1,39 @@
+{
+  "name": "readme-agent",
+  "version": "0.1.0",
+  "description": "A terminal tool that updates project README files from Git changes.",
+  "type": "module",
+  "bin": {
+    "readme-agent": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=24.15.0"
+  },
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "npm run clean && npm run typecheck && tsup src/cli.ts --format esm --target node22 --out-dir dist --clean --sourcemap",
+    "dev": "tsup src/cli.ts --format esm --target node22 --out-dir dist --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "prepack": "npm run build && npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.8.0",
+    "commander": "^15.1.0",
+    "diff": "^9.0.0",
+    "ignore": "^7.0.16",
+    "simple-git": "^4.1.0"
+  },
+  "optionalDependencies": {
+    "openai": "^7.60.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsup": "^9.0.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1"
+  }
+}
