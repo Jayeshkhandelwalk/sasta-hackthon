@@ -14,8 +14,8 @@
   },
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
-    "build": "npm run clean && npm run typecheck && tsup src/cli.ts --format esm --target node22 --out-dir dist --clean --sourcemap",
-    "dev": "tsup src/cli.ts --format esm --target node22 --out-dir dist --watch",
+    "build": "npm run clean && npm run typecheck && tsup src/cli.ts --format esm --target node22 --out-dir dist --clean --sourcemap --external @google/genai",
+    "dev": "tsup src/cli.ts --format esm --target node22 --out-dir dist --watch --external @google/genai",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "prepack": "npm run build && npm run typecheck && npm test"

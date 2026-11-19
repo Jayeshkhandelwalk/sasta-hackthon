@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import type { AgentConfig, UpdateContext } from '../contracts.js';
 
 export interface AIProviderOptions {
@@ -42,7 +43,7 @@ export async function draftManagedReadmeSection(
     throw new ProviderError(`Unsupported AI provider: ${config.ai.provider}`);
   }
 
-  const apiKey = options.apiKey ?? process.env.GEMINI_API_KEY;
+  const apiKey = options.apiKey ?? getGeminiApiKey();
   if (!apiKey || apiKey.trim() === '') {
     throw new ProviderError(
       'Missing GEMINI_API_KEY environment variable; set it before using AI drafting.',
@@ -94,7 +95,7 @@ export function buildBoundedPrompt(context: UpdateContext): string {
     .sort(([left], [right]) => left.localeCompare(right))
     .slice(0, 50)
     .map(([file, contents]) => {
-      const bounded = contents.slice(0, 12_000);
+      const bounded = removeManagedMarkers(contents).slice(0, 12_000);
       return `<UNTRUSTED_SOURCE_FILE name="${sanitizePromptLabel(file)}">\n${bounded}\n</UNTRUSTED_SOURCE_FILE>`;
     })
     .join('\n\n');
@@ -110,11 +111,11 @@ export function buildBoundedPrompt(context: UpdateContext): string {
     'Never read or write files, use tools, return commands, or include managed markers.',
     '',
     '<UNTRUSTED_README>',
-    context.readmeText.slice(0, 20_000),
+    removeManagedMarkers(context.readmeText).slice(0, 20_000),
     '</UNTRUSTED_README>',
     '',
     '<UNTRUSTED_DIFF>',
-    context.diff.slice(0, 20_000),
+    removeManagedMarkers(context.diff).slice(0, 20_000),
     '</UNTRUSTED_DIFF>',
     '',
     '<UNTRUSTED_SELECTED_CODE_CONFIG>',
@@ -162,11 +163,42 @@ function sanitizePromptLabel(file: string): string {
   return file.replace(/[\r\n]/g, ' ').replace(/\u0000/g, '');
 }
 
+function removeManagedMarkers(text: string): string {
+  return text.replace(/<!--\s*README-AGENT:(START|END)\s*-->/gi, '');
+}
+
 function redactSecret(message: string, secret: string): string {
   if (!secret) {
     return message;
   }
   return message.split(secret).join('[REDACTED]');
+}
+
+function getGeminiApiKey(): string | undefined {
+  const processKey = process.env.GEMINI_API_KEY?.trim();
+  if (processKey) {
+    return processKey;
+  }
+
+  if (process.platform !== 'win32') {
+    return undefined;
+  }
+
+  try {
+    const userKey = execFileSync(
+      'powershell.exe',
+      [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        "[Environment]::GetEnvironmentVariable('GEMINI_API_KEY','User')",
+      ],
+      { encoding: 'utf8', windowsHide: true, timeout: 5_000 },
+    ).trim();
+    return userKey || undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function getErrorMessage(error: unknown): string {

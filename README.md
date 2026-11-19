@@ -291,3 +291,127 @@ For local development, remove the npm link without deleting the source folder:
 ```powershell
 npm unlink --global readme-agent
 ```
+
+<!-- README-AGENT:START -->
+# readme-agent
+
+`readme-agent` is a Node.js CLI tool that helps you maintain and update a managed section of a project's README file based on recent Git changes and project source files. It reviews proposed updates interactively and requires your explicit approval before modifying the file.
+
+## Project Overview
+
+`readme-agent` analyzes your repository's state, configuration files, and source code changes using Git to keep your documentation accurate. It can operate manually, monitor files in watch mode, or run automatically via local Git hooks. For richer documentation, optional Google Gemini AI drafting can be enabled to generate a full project overview, setup instructions, and tutorials.
+
+## Key Features
+
+- **Interactive Previews:** Inspect proposed changes and approve or reject them before they are written to disk.
+- **Git Integration:** Automatically reads repository status, diffs, and manifests to summarize changes.
+- **Optional Watch Mode:** Continuously monitors eligible project files and debounces update flows.
+- **Local Git Hooks:** Optionally installs a local `post-commit` hook to review documentation updates after commits.
+- **AI-Powered Drafting:** Optionally integrates with Google Gemini to generate comprehensive project guides.
+
+## Prerequisites
+
+- **Node.js:** Version `24.15.0` or later.
+- **Git:** Installed and available in your command line path.
+
+## Installation
+
+### Global Installation (For Users)
+
+Install the package globally from npm using its published package name:
+
+```powershell
+npm install --global @jayu_k/readme-agent
+```
+
+Verify the installation:
+
+```powershell
+readme-agent --help
+```
+
+### Local Development Installation (For Contributors)
+
+If you are working from a local source clone:
+
+```powershell
+npm install
+npm run build
+npm link
+readme-agent --help
+```
+
+## Getting-Started Tutorial
+
+### Step 1: Initialize the Target Project
+
+Navigate into the root directory of the Git repository where you want to manage your README:
+
+```powershell
+cd "C:\path\to\your\project"
+readme-agent init
+```
+
+The `init` command generates a `.readme-agent.json` configuration file in your repository.
+
+### Step 2: Configure Your README Markers
+
+Open your project's `README.md` file and designate where generated content should appear by adding the appropriate managed sections or letting `init` guide you.
+
+### Step 3: Update and Preview Changes
+
+After modifying your project code or configuration, run the update command:
+
+```powershell
+readme-agent update
+```
+
+The CLI collects relevant Git changes, displays a preview of the proposed README section, and prompts you to approve or reject the update.
+
+## Common Usage
+
+### Running Watch Mode
+
+To continuously watch eligible project files and trigger the preview-and-approval flow on changes, run:
+
+```powershell
+readme-agent watch
+```
+
+Press `Ctrl+C` to exit watch mode.
+
+### Managing Git Hooks
+
+To install a local post-commit hook that generates documentation updates following commits:
+
+```powershell
+readme-agent hook install
+```
+
+To remove the hook:
+
+```powershell
+readme-agent hook uninstall
+```
+
+## Development and Testing
+
+If you are developing or contributing to `readme-agent` itself, use the following commands from the repository root:
+
+- **Install Dependencies:**
+  ```powershell
+  npm install
+  ```
+- **Run Tests:**
+  ```powershell
+  npm test
+  ```
+- **Typecheck:**
+  ```powershell
+  npm run typecheck
+  ```
+- **Build the CLI:**
+  ```powershell
+  npm run build
+  ```
+<!-- README-AGENT:END -->
