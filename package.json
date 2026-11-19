@@ -1,6 +1,6 @@
 {
   "name": "@jayu_k/readme-agent",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A terminal tool that updates project README files from Git changes.",
   "type": "module",
   "bin": {

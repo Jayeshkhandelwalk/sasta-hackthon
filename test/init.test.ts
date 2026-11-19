@@ -3,6 +3,8 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createDefaultConfig, loadConfig } from '../src/config.js';
+import { simpleGit } from 'simple-git';
+import { runInit } from '../src/commands/init.js';
 
 describe('repository configuration', () => {
   let repositoryRoot: string;
@@ -94,6 +96,30 @@ describe('repository configuration', () => {
         provider: 'gemini',
         model: 'gemini-3.5-flash-lite',
       },
+    });
+  });
+
+  describe('readme-agent initialization', () => {
+    let repositoryRoot: string;
+
+    beforeEach(async () => {
+      repositoryRoot = await mkdtemp(join(tmpdir(), 'readme-agent-init-'));
+      await simpleGit(repositoryRoot).init();
+    });
+
+    afterEach(async () => {
+      await rm(repositoryRoot, { recursive: true, force: true });
+    });
+
+    it('adds managed markers to an existing README', async () => {
+      await writeFile(join(repositoryRoot, 'README.md'), '# Existing project\n');
+
+      await runInit(repositoryRoot);
+
+      const readme = await readFile(join(repositoryRoot, 'README.md'), 'utf8');
+      expect(readme).toContain('# Existing project');
+      expect(readme).toContain('<!-- README-AGENT:START -->');
+      expect(readme).toContain('<!-- README-AGENT:END -->');
     });
   });
 

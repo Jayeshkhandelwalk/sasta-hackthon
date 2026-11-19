@@ -159,15 +159,32 @@ function validateTextArguments(
 
 function findMarkerIndexes(text: string, marker: string): number[] {
   const indexes: number[] = [];
-  let fromIndex = 0;
-  while (true) {
-    const index = text.indexOf(marker, fromIndex);
-    if (index === -1) {
-      return indexes;
+  const linePattern = /([^\r\n]*)(?:\r\n|\r|\n|$)/g;
+  let insideFence = false;
+  for (const match of text.matchAll(linePattern)) {
+    const line = match[1];
+    const lineStart = match.index ?? 0;
+    const trimmedLine = line.trim();
+    if (/^(```|~~~)/.test(trimmedLine)) {
+      insideFence = !insideFence;
+      continue;
     }
-    indexes.push(index);
-    fromIndex = index + marker.length;
+    if (insideFence) {
+      continue;
+    }
+    const markerOffset = line.indexOf(marker);
+    if (
+      markerOffset >= 0 &&
+      line.slice(0, markerOffset).trim() === '' &&
+      line.slice(markerOffset + marker.length).trim() === ''
+    ) {
+      indexes.push(lineStart + markerOffset);
+    }
+    if (match[0] === '') {
+      break;
+    }
   }
+  return indexes;
 }
 
 function normalizeSection(section: string): string {

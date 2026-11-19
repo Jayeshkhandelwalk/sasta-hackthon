@@ -79,6 +79,26 @@ describe('managed README section updates', () => {
     ).toThrow(/duplicate start or end markers/i);
   });
 
+  it('ignores marker text inside documentation examples and JSON', () => {
+    const original =
+      '```markdown\n' +
+      config.startMarker +
+      '\nExample\n' +
+      config.endMarker +
+      '\n```\n' +
+      '\"startMarker\": \"' +
+      config.startMarker +
+      '\"\n' +
+      config.startMarker +
+      '\nReal generated text\n' +
+      config.endMarker +
+      '\n';
+
+    expect(buildUpdatedReadme(original, 'Replacement', config)).toContain(
+      config.startMarker + '\nReplacement\n' + config.endMarker,
+    );
+  });
+
   it('rejects empty and unexpectedly large proposed sections', () => {
     const original =
       `${config.startMarker}\nOld\n${config.endMarker}\n`;

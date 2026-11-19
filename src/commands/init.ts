@@ -1,5 +1,5 @@
 import { confirm } from '@inquirer/prompts';
-import { lstat, mkdir, realpath, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { getDefaultConfig, loadConfig, saveConfig } from '../config.js';
 import { findRepoRoot } from '../git/repository.js';
@@ -70,6 +70,8 @@ export async function runInit(cwd: string): Promise<void> {
   }
   if (shouldCreateReadme) {
     await createReadme(repositoryRoot, config);
+  } else {
+    await ensureManagedReadmeSection(repositoryRoot, config);
   }
 
   console.log(`Initialized readme-agent in "${repositoryRoot}".`);
@@ -175,6 +177,77 @@ async function createReadme(repositoryRoot: string, config: AgentConfig): Promis
     }
     throw new Error(`Unable to create README "${config.readmePath}": ${getErrorMessage(error)}`);
   }
+}
+
+async function ensureManagedReadmeSection(
+  repositoryRoot: string,
+  config: AgentConfig,
+): Promise<void> {
+  const readmeFile = resolveReadmePath(repositoryRoot, config.readmePath);
+  let readmeInfo;
+  try {
+    readmeInfo = await lstat(readmeFile);
+  } catch (error) {
+    throw new Error(`Unable to inspect README "${config.readmePath}": ${getErrorMessage(error)}`);
+  }
+  if (readmeInfo.isSymbolicLink() || !readmeInfo.isFile()) {
+    throw new Error(`README "${config.readmePath}" must be a regular file.`);
+  }
+
+  let contents: string;
+  try {
+    contents = await readFile(readmeFile, 'utf8');
+  } catch (error) {
+    throw new Error(`Unable to read README "${config.readmePath}": ${getErrorMessage(error)}`);
+  }
+
+  const startCount = countOccurrences(contents, config.startMarker);
+  const endCount = countOccurrences(contents, config.endMarker);
+  if (startCount > 1 || endCount > 1) {
+    throw new Error(
+      `Managed README section is invalid: duplicate start or end markers found; keep exactly one of each.`,
+    );
+  }
+  if (startCount === 1 && endCount === 1) {
+    const startIndex = contents.indexOf(config.startMarker);
+    const endIndex = contents.indexOf(config.endMarker);
+    if (endIndex < startIndex + config.startMarker.length) {
+      throw new Error(
+        `Managed README section is reversed: "${config.endMarker}" appears before "${config.startMarker}".`,
+      );
+    }
+    return;
+  }
+  if (startCount !== endCount) {
+    throw new Error(
+      `Managed README section is incomplete: add both "${config.startMarker}" and "${config.endMarker}".`,
+    );
+  }
+
+  const separator = contents.length > 0 && !contents.endsWith('\n') ? '\n\n' : '\n';
+  const managedSection =
+    `${separator}${config.startMarker}\n\n${config.endMarker}\n`;
+  try {
+    await writeFile(readmeFile, `${contents}${managedSection}`, 'utf8');
+  } catch (error) {
+    throw new Error(`Unable to add managed markers to README "${config.readmePath}": ${getErrorMessage(error)}`);
+  }
+}
+
+function countOccurrences(text: string, value: string): number {
+  let count = 0;
+  let insideFence = false;
+  for (const line of text.split(/\r\n|\r|\n/)) {
+    const trimmedLine = line.trim();
+    if (/^(```|~~~)/.test(trimmedLine)) {
+      insideFence = !insideFence;
+      continue;
+    }
+    if (!insideFence && trimmedLine === value) {
+      count += 1;
+    }
+  }
+  return count;
 }
 
 function resolveReadmePath(repositoryRoot: string, readmePath: string): string {
