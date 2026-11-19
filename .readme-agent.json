@@ -1,0 +1,26 @@
+{
+  "readmePath": "README.md",
+  "include": [
+    "**/*"
+  ],
+  "exclude": [
+    ".git/**",
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    ".env",
+    ".env.*",
+    "**/.env",
+    "**/.env.*",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "startMarker": "<!-- README-AGENT:START -->",
+  "endMarker": "<!-- README-AGENT:END -->",
+  "updateMode": "manual",
+  "ai": {
+    "enabled": true,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite"
+  }
+}
