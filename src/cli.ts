@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { pathToFileURL } from 'node:url';
-import { resolve } from 'node:path';
+import { realpathSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { confirm } from '@inquirer/prompts';
 import { runInit } from './commands/init.js';
 import { runUpdate } from './commands/update.js';
@@ -129,8 +129,17 @@ function getErrorMessage(error: unknown): string {
 }
 
 if (
-  process.argv[1] &&
-  pathToFileURL(resolve(process.argv[1])).href === import.meta.url
+  isDirectEntryPoint(process.argv[1], fileURLToPath(import.meta.url))
 ) {
   void main();
+}
+
+export function isDirectEntryPoint(
+  entryPath: string | undefined,
+  modulePath: string,
+): boolean {
+  if (!entryPath) {
+    return false;
+  }
+  return realpathSync(entryPath) === realpathSync(modulePath);
 }
