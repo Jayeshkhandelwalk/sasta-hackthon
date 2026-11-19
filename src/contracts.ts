@@ -9,7 +9,7 @@ export interface AgentConfig {
   updateMode: UpdateMode;
   ai?: {
     enabled?: boolean;
-    provider?: 'openai';
+    provider?: 'gemini';
     model?: string;
   };
 }

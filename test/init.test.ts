@@ -69,6 +69,54 @@ describe('repository configuration', () => {
     );
   });
 
+  it('accepts the Gemini provider and configured model', async () => {
+    const config = {
+      readmePath: 'README.md',
+      include: ['**/*'],
+      exclude: [],
+      startMarker: '<!-- README-AGENT:START -->',
+      endMarker: '<!-- README-AGENT:END -->',
+      updateMode: 'manual',
+      ai: {
+        enabled: true,
+        provider: 'gemini',
+        model: 'gemini-3.5-flash-lite',
+      },
+    };
+    await writeFile(
+      join(repositoryRoot, '.readme-agent.json'),
+      `${JSON.stringify(config)}\n`,
+    );
+
+    await expect(loadConfig(repositoryRoot)).resolves.toMatchObject({
+      ai: {
+        enabled: true,
+        provider: 'gemini',
+        model: 'gemini-3.5-flash-lite',
+      },
+    });
+  });
+
+  it('rejects OpenAI provider settings with a migration hint', async () => {
+    const config = {
+      readmePath: 'README.md',
+      include: ['**/*'],
+      exclude: [],
+      startMarker: '<!-- README-AGENT:START -->',
+      endMarker: '<!-- README-AGENT:END -->',
+      updateMode: 'manual',
+      ai: { enabled: true, provider: 'openai' },
+    };
+    await writeFile(
+      join(repositoryRoot, '.readme-agent.json'),
+      `${JSON.stringify(config)}\n`,
+    );
+
+    await expect(loadConfig(repositoryRoot)).rejects.toThrow(
+      /ai\.provider must be "gemini"/i,
+    );
+  });
+
   it('rejects README paths that escape the repository', async () => {
     await writeFile(
       join(repositoryRoot, '.readme-agent.json'),

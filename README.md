@@ -6,7 +6,9 @@ a project's README. It only writes after approval and never commits or pushes.
 
 ## Commands
 
-Run commands from inside an initialized Git repository:
+Run `init`, `update`, `watch`, and `hook` commands from inside the Git
+repository whose README you want to maintain. Run `init` before the other
+commands.
 
 ```text
 readme-agent init
@@ -19,7 +21,7 @@ readme-agent hook uninstall
 `init` creates `.readme-agent.json` and can offer to create a README with the
 managed markers. `update` collects relevant Git changes, previews the proposed
 section, and asks before applying. API keys are never stored in project config;
-optional OpenAI drafting reads `OPENAI_API_KEY` from the environment.
+optional Gemini drafting reads `GEMINI_API_KEY` from the environment.
 
 ## Optional automation
 
@@ -61,10 +63,23 @@ git --version
 
 The CLI currently requires Node.js 24.15.0 or later and Git.
 
-### 2. Build and link the CLI
+### 2. Install the CLI
 
-Run these commands in the readme-agent source folder, not in the project
-whose README you plan to update:
+If you are a regular user, install the published package globally:
+
+```powershell
+npm view @jayu_k/readme-agent version
+npm install --global @jayu_k/readme-agent
+Get-Command readme-agent
+readme-agent --help
+```
+
+The published npm package is named `@jayu_k/readme-agent`; its installed
+command is still `readme-agent`. `npm view` prints the published version,
+and `Get-Command` confirms that PowerShell can locate the command.
+
+If you are developing the CLI locally instead, run these commands in the
+readme-agent source folder, not in the project whose README you plan to update:
 
 ```powershell
 cd "C:\Users\ASUS\OneDrive\Desktop\sasta hackthon"
@@ -88,8 +103,21 @@ git status
 readme-agent init
 ```
 
-`init` creates `.readme-agent.json` in the Git repository. If a README
-already exists, add the markers below where generated text is allowed. The
+Replace the example path with your project folder. If `git status` says the
+folder is not a Git repository, initialize Git there first:
+
+```powershell
+git init
+```
+
+`readme-agent init` creates `.readme-agent.json` in the Git repository. If
+your README already exists, open it:
+
+```powershell
+notepad README.md
+```
+
+Add the markers where generated text is allowed, then save the README. The
 CLI edits only the text between them:
 
 ```markdown
@@ -105,11 +133,13 @@ If the README is missing, `init` can offer to create one with the markers.
 Make a code or configuration change, then run:
 
 ```powershell
+git status --short
 readme-agent update
 ```
 
 The CLI collects relevant Git changes, displays a preview, and asks before
-writing. Review the result with:
+writing. Enter `y` to apply the preview or `n` to leave the README unchanged.
+Review the result with:
 
 ```powershell
 git status
@@ -126,9 +156,13 @@ git commit -m "docs: update README"
 By default, the generated section summarizes changed files and Git diff
 headers. It may not identify exact function names or version changes.
 
-### 5. Optional AI drafting
+### 5. Optional Gemini AI drafting
 
-To enable OpenAI drafting, open the target project's config:
+The default model is Google's `gemini-3.5-flash-lite`. Gemini API access has a
+limited free tier, subject to Google's current model availability, quotas, and
+terms. Create an API key in
+[Google AI Studio](https://aistudio.google.com/apikey), then open the target
+project's config:
 
 ```powershell
 notepad .readme-agent.json
@@ -140,21 +174,24 @@ property if needed:
 ```json
 "ai": {
   "enabled": true,
-  "provider": "openai",
-  "model": "gpt-4o-mini"
+  "provider": "gemini",
+  "model": "gemini-3.5-flash-lite"
 }
 ```
 
 Set the API key only in the current PowerShell session, not in the config:
 
 ```powershell
-$key = Read-Host "OpenAI API key" -AsSecureString
-$env:OPENAI_API_KEY = [System.Net.NetworkCredential]::new("", $key).Password
+$key = Read-Host "Gemini API key" -AsSecureString
+$env:GEMINI_API_KEY = [System.Net.NetworkCredential]::new("", $key).Password
 readme-agent update
 ```
 
 Close that PowerShell window to clear its environment variable. AI output is
-a proposal; review and approve it before it is written.
+a proposal; review and approve it before it is written. On Google's free tier,
+submitted content may be used to improve Google products; do not use it for
+confidential source code, and review Google's current terms and data-use
+policies before sending project context.
 
 ### 6. Optional watch mode
 
@@ -189,25 +226,30 @@ The CLI refuses to overwrite an existing hook.
 
 ### 8. Troubleshoot a command that PowerShell cannot find
 
-If `readme-agent` is not recognized, run `npm link` from the readme-agent
-source folder, not from the target project's folder:
+If `readme-agent` is not recognized after a global npm install, reinstall
+the published package:
 
 ```powershell
-cd "C:\Users\ASUS\OneDrive\Desktop\sasta hackthon"
-npm pkg get name bin
-npm run build
-npm link
+npm install --global @jayu_k/readme-agent
 Get-Command readme-agent
 readme-agent --help
 ```
 
-The package name should be `readme-agent` and its `bin` entry should point
-to `./dist/cli.js`. If the command is still unavailable, close and reopen
-PowerShell and try `Get-Command readme-agent` again.
+If you are developing the CLI from source instead, run `npm link` from its
+source folder (never from the target project's folder). The package name is
+`@jayu_k/readme-agent`, and its `bin` entry exposes `readme-agent`. If the
+command is still unavailable, close and reopen PowerShell and check again
+with `Get-Command readme-agent`.
 
-### 9. Optional unlink
+### 9. Optional uninstall or unlink
 
-To remove the local npm link without deleting the source folder:
+To uninstall the published CLI:
+
+```powershell
+npm uninstall --global @jayu_k/readme-agent
+```
+
+For local development, remove the npm link without deleting the source folder:
 
 ```powershell
 npm unlink --global readme-agent

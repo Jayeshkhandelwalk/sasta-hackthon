@@ -151,17 +151,17 @@ describe('readme-agent update command', () => {
         collectUpdateContext: vi.fn().mockResolvedValue(context),
         draftSection: vi
           .fn()
-          .mockRejectedValue(new Error('Missing OPENAI_API_KEY')),
+          .mockRejectedValue(new Error('Missing GEMINI_API_KEY')),
         writePreview: vi.fn(),
       }),
-    ).rejects.toThrow(/Cannot draft README section.*Missing OPENAI_API_KEY/i);
+    ).rejects.toThrow(/Cannot draft README section.*Missing GEMINI_API_KEY/i);
 
     const readmeAfterFailure = await readFile(
       join(repositoryRoot, 'README.md'),
       'utf8',
     );
     expect(readmeAfterFailure).toContain('\nOld\n');
-    expect(readmeAfterFailure).not.toContain('Missing OPENAI_API_KEY');
+    expect(readmeAfterFailure).not.toContain('Missing GEMINI_API_KEY');
   });
 });
 

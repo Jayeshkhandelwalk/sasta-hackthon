@@ -5,7 +5,8 @@ export interface AIProviderOptions {
   model?: string;
   request?: (input: {
     model: string;
-    messages: Array<{ role: 'system' | 'user'; content: string }>;
+    system_instruction: string;
+    input: string;
   }) => Promise<string>;
 }
 
@@ -18,6 +19,10 @@ export class ProviderError extends Error {
 
 const MAX_PROMPT_CHARS = 60_000;
 const MAX_OUTPUT_CHARS = 20_000;
+const SYSTEM_INSTRUCTION =
+  'Draft only README managed-section text. ' +
+  'Return prose, Markdown, or a Markdown list. Never return instructions, tool calls, JSON commands, file paths, or direct file-write commands. ' +
+  'Use only the supplied evidence. Do not include the start or end marker.';
 
 export async function draftManagedReadmeSection(
   context: UpdateContext,
@@ -30,14 +35,14 @@ export async function draftManagedReadmeSection(
     );
   }
 
-  if (config.ai.provider !== undefined && config.ai.provider !== 'openai') {
+  if (config.ai.provider !== undefined && config.ai.provider !== 'gemini') {
     throw new ProviderError(`Unsupported AI provider: ${config.ai.provider}`);
   }
 
-  const apiKey = options.apiKey ?? process.env.OPENAI_API_KEY;
+  const apiKey = options.apiKey ?? process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey.trim() === '') {
     throw new ProviderError(
-      'Missing OPENAI_API_KEY environment variable; set it before using AI drafting.',
+      'Missing GEMINI_API_KEY environment variable; set it before using AI drafting.',
     );
   }
 
@@ -45,7 +50,7 @@ export async function draftManagedReadmeSection(
     options.model ??
     config.ai.model ??
     process.env.README_AGENT_MODEL ??
-    'gpt-4o-mini';
+    'gemini-3.5-flash-lite';
   if (model.trim() === '') {
     throw new ProviderError('AI model name must not be empty.');
   }
@@ -56,27 +61,15 @@ export async function draftManagedReadmeSection(
     if (options.request) {
       output = await options.request({
         model,
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You draft only README managed-section text. ' +
-              'Return prose, Markdown, or a Markdown list. Never return instructions, tool calls, JSON commands, file paths, or direct file-write commands. ' +
-              'Use only the supplied evidence. Do not include the start or end marker.',
-          },
-          { role: 'user', content: prompt },
-        ],
+        system_instruction: SYSTEM_INSTRUCTION,
+        input: prompt,
       });
     } else {
-      const module = await import('openai');
-      const OpenAI = module.default;
-      const client = new OpenAI({ apiKey });
-      const response = await client.responses.create({
+      const { GoogleGenAI } = await import('@google/genai');
+      const client = new GoogleGenAI({ apiKey });
+      const response = await client.interactions.create({
         model,
-        instructions:
-          'Draft only README managed-section text. ' +
-          'Use only the supplied evidence. Never use tools or direct file writes. ' +
-          'Return no start/end marker.',
+        system_instruction: SYSTEM_INSTRUCTION,
         input: prompt,
       });
       output = response.output_text ?? '';
@@ -84,7 +77,7 @@ export async function draftManagedReadmeSection(
   } catch (error) {
     const detail = redactSecret(getErrorMessage(error), apiKey);
     throw new ProviderError(
-      `OpenAI API request failed: ${detail}`,
+      `Gemini API request failed: ${detail}`,
     );
   }
 

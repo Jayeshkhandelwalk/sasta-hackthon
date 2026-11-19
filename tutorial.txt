@@ -121,7 +121,8 @@ AI drafting is optional. The default configuration uses a basic summary of
 changed files and Git diff headers; it may not identify exact function names
 or version changes.
 
-To enable OpenAI drafting, open the target project's config:
+To enable Gemini drafting, open the target project's config. The default model
+is `gemini-3.5-flash-lite`; free-tier availability and quotas can change:
 
   notepad .readme-agent.json
 
@@ -130,19 +131,22 @@ it, make sure that property's line ends with a comma:
 
   "ai": {
     "enabled": true,
-    "provider": "openai",
-    "model": "gpt-4o-mini"
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite"
   }
 
-Set the API key for the current PowerShell window without putting it in the
-project config:
+Create a key in Google AI Studio at https://aistudio.google.com/apikey.
+Set it for the current PowerShell window without putting it in the project
+config:
 
-  $key = Read-Host "OpenAI API key" -AsSecureString
-  $env:OPENAI_API_KEY = [System.Net.NetworkCredential]::new("", $key).Password
+  $key = Read-Host "Gemini API key" -AsSecureString
+  $env:GEMINI_API_KEY = [System.Net.NetworkCredential]::new("", $key).Password
   readme-agent update
 
 Close the PowerShell window to clear this session's environment variable.
-AI output is only a proposal; review it before approving the update.
+AI output is only a proposal; review it before approving the update. On the
+free tier, submitted content may be used to improve Google's products; do not
+send confidential code and review Google's current terms first.
 
 
 STEP 6: OPTIONAL WATCH MODE

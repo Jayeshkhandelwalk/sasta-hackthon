@@ -20,8 +20,8 @@ The recommended stack
   and diffs.
 - Node.js fs/promises: reads project files and safely writes README.md.
 - ignore: helps skip files and folders listed in .gitignore.
-- OpenAI Node SDK (optional): sends selected code context to an AI model to
-  draft documentation. Another model provider can be substituted.
+- Google GenAI Node SDK (optional): sends selected code context to a Gemini
+  model to draft documentation.
 - @inquirer/prompts: asks for confirmation in the terminal.
 - diff: creates a readable before/after preview.
 - chokidar (optional): watches files for changes in "watch" mode.
@@ -100,9 +100,9 @@ optional AI provider can draft a small change using the README and selected
 code context.
 
 Stack used:
-- The OpenAI Node SDK is one possible client for an AI API.
-- Keep provider-specific code behind a small module so another provider can
-  be added later without changing Git or file-handling code.
+- The Google GenAI Node SDK connects to the Gemini API.
+- Keep provider-specific code behind a small module so Git and file-handling
+  code remain independent of the model API.
 - Store API keys in an environment variable or an operating-system secret
   store. Never write them to the repository or .readme-agent.json.
 

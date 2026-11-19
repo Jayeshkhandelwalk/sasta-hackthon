@@ -213,8 +213,8 @@ function validateAiConfig(value: unknown): NonNullable<AgentConfig['ai']> {
   }
 
   if (value.provider !== undefined) {
-    if (value.provider !== 'openai') {
-      throw new Error('ai.provider must be "openai" when specified');
+    if (value.provider !== 'gemini') {
+      throw new Error('ai.provider must be "gemini" when specified');
     }
     ai.provider = value.provider;
   }
