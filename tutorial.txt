@@ -1,0 +1,196 @@
+README-AGENT: STEP-BY-STEP COMMANDS
+==================================
+
+This is a Windows PowerShell guide for building and using the readme-agent
+CLI. Replace C:\path\to\your\project with the folder of the Git repository
+whose README you want to update.
+
+REQUIREMENTS
+------------
+- Node.js 24.15.0 or later
+- Git
+- PowerShell
+
+
+
+STEP 1: CHECK NODE.JS AND GIT
+-----------------------------
+Open PowerShell and run:
+
+  node --version
+  git --version
+
+These commands print the installed Node.js and Git versions. The current CLI
+package requires Node.js 24.15.0 or later.
+
+
+STEP 2: BUILD AND LINK THE CLI
+------------------------------
+Run these commands in the readme-agent source folder:
+
+  cd "C:\Users\ASUS\OneDrive\Desktop\sasta hackthon"
+  npm install
+  npm run build
+  npm link
+  readme-agent --help
+
+What each command does:
+- cd opens the readme-agent source folder.
+- npm install installs the packages required by the CLI.
+- npm run build compiles the CLI into the dist folder.
+- npm link makes this local CLI available as the readme-agent command.
+- readme-agent --help prints the available commands.
+***************************************************************
+TROUBLESHOOTING: "readme-agent IS NOT RECOGNIZED"
+-------------------------------------------------
+Run npm link from the readme-agent source folder, not from the frontend or
+other target project folder. npm link registers the package in the folder
+where the command is run.
+
+In the source folder, run:
+
+  cd the path to the readme-agent source folder
+  npm pkg get name bin
+  npm run build
+  npm link
+  Get-Command readme-agent
+  readme-agent --help
+
+The package name should be "readme-agent" and the bin entry should point to
+"./dist/cli.js". Get-Command should show where PowerShell found the command.
+
+After that works, open a separate PowerShell window and go to the target
+project folder to run init/update/watch/hook commands. Do not run npm link in
+that target folder.
+
+If PowerShell still cannot find readme-agent after linking from the correct
+source folder, close and reopen PowerShell so it refreshes PATH. Then run:
+
+  Get-Command readme-agent
+  readme-agent --help
+****************************************************************
+STEP 3: OPEN THE PROJECT TO INITIALIZE
+--------------------------------------
+Open a second PowerShell window and go to the Git project whose README should
+be updated:
+
+  cd "C:\path\to\your\project"
+  git status
+  readme-agent init
+
+What each command does:
+- cd opens your project folder. Replace the example path.
+- git status shows current Git changes.
+- readme-agent init creates .readme-agent.json in the Git repository.
+
+If README.md does not exist, init can offer to create one with managed
+section markers. If README.md already exists, add the markers yourself in
+the section where generated text is allowed:
+
+  <!-- README-AGENT:START -->
+  Generated documentation goes here.
+  <!-- README-AGENT:END -->
+
+The CLI updates only the text between these two markers.
+
+
+STEP 4: PREVIEW AND APPLY A README UPDATE
+-----------------------------------------
+After making a code or configuration change in your project, run:
+
+  readme-agent update
+
+The CLI checks Git changes, prepares a proposed README section, displays a
+before/after preview, and asks whether to apply it. Confirm only after
+reviewing the preview.
+
+Review the resulting README change with:
+
+  git status
+  git diff -- README.md
+
+The CLI does not commit or push. If you want to commit the README change:
+
+  git add README.md
+  git commit -m "docs: update README"
+
+
+STEP 5: OPTIONAL AI DRAFTING
+----------------------------
+AI drafting is optional. The default configuration uses a basic summary of
+changed files and Git diff headers; it may not identify exact function names
+or version changes.
+
+To enable OpenAI drafting, open the target project's config:
+
+  notepad .readme-agent.json
+
+Add this property inside the JSON object. If another property appears above
+it, make sure that property's line ends with a comma:
+
+  "ai": {
+    "enabled": true,
+    "provider": "openai",
+    "model": "gpt-4o-mini"
+  }
+
+Set the API key for the current PowerShell window without putting it in the
+project config:
+
+  $key = Read-Host "OpenAI API key" -AsSecureString
+  $env:OPENAI_API_KEY = [System.Net.NetworkCredential]::new("", $key).Password
+  readme-agent update
+
+Close the PowerShell window to clear this session's environment variable.
+AI output is only a proposal; review it before approving the update.
+
+
+STEP 6: OPTIONAL WATCH MODE
+---------------------------
+From the target project folder, run:
+
+  readme-agent watch
+
+Watch mode monitors eligible project files. After a relevant change, it
+debounces events and offers the same README preview and approval flow. It
+ignores the README, secrets, Git-ignored paths, and generated/dependency
+directories. Press Ctrl+C to stop watching.
+
+
+STEP 7: OPTIONAL POST-COMMIT HOOK
+---------------------------------
+From the target project folder, install the local hook:
+
+  readme-agent hook install
+
+Confirm the prompt. After a commit, the hook offers a README update based on
+that commit. The resulting README change remains uncommitted for you to
+review. The hook is local to this clone and is not shared with collaborators.
+
+Remove the readme-agent-managed hook with:
+
+  readme-agent hook uninstall
+
+The CLI refuses to overwrite an existing hook.
+
+
+STEP 8: UNLINK THE LOCAL CLI (OPTIONAL)
+---------------------------------------
+If you no longer want the locally linked CLI available, run:
+
+  npm unlink --global readme-agent
+
+This removes the local npm link. It does not delete the source folder.
+
+
+IMPORTANT SAFETY NOTES
+----------------------
+- Run init, update, watch, and hook commands from the target Git repository.
+- Add managed markers to an existing README before running update.
+- The CLI asks for approval before writing README changes.
+- In a non-interactive terminal it refuses to apply an update without
+  explicit approval.
+- The CLI does not automatically commit or push.
+- Never put an API key in .readme-agent.json or commit it to Git.
+
+
